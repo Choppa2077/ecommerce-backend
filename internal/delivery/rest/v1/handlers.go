@@ -25,7 +25,7 @@ func (h *Handler) Init(api *gin.RouterGroup) {
 
 	// Public routes
 	h.InitAuthRoutes(v1)
-	
+
 	// Protected routes (require authentication)
 	authMiddleware := middleware.AuthMiddleware(h.services.AuthService)
 	h.InitCategoryRoutes(v1, authMiddleware)
