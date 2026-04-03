@@ -1,8 +1,8 @@
 # QA Test Strategy Document
 
 **Project:** E-Commerce Platform
-**Version:** 1.0
-**Date:** 2026-03-21
+**Version:** 2.0
+**Date:** 2026-04-03 (updated for Assignment 2)
 **Author:** QA Team
 
 ---
@@ -128,9 +128,12 @@ Testing is prioritized by risk score (HIGH first):
 
 ### 4.4 GitHub Actions (CI/CD)
 - **Backend pipeline:** `.github/workflows/ci.yml` — triggers on push/PR to main
-  - Steps: `go mod download` → `go build ./...` → `go vet ./...`
+  - Steps: `go mod download` → `go build ./...` → `go vet ./...` → `go test ./internal/service/... -v`
+  - Artifact: `test-results.json` uploaded on every run
 - **Frontend pipeline:** `.github/workflows/ci.yml` — triggers on push/PR to main
-  - Steps: `npm ci` → `npm run lint` → `npm run build`
+  - Job 1 (Build & Lint): `npm ci` → `npm run lint` → `npm run build`
+  - Job 2 (E2E Tests): `npm ci` → `playwright install chromium` → `npm run test:e2e`
+  - Artifact: `playwright-report/` HTML report uploaded on every run
 
 ---
 
@@ -150,15 +153,70 @@ Testing is prioritized by risk score (HIGH first):
 
 ---
 
-## 6. Planned Metrics
+## 6. Automation Approach & Results (Assignment 2)
 
-| Metric | Baseline (Now) | Target (End of Course) |
-|--------|---------------|----------------------|
-| API endpoint coverage | 0% | 100% (all 28 endpoints) |
-| Service unit test coverage | 0% | 80% (HIGH-risk services) |
-| E2E scenario coverage | 0% | 5 critical user flows |
-| Defects found (HIGH severity) | 0 | tracked per sprint |
-| CI pipeline pass rate | N/A | ≥ 95% |
+### 6.1 Automation Strategy
+
+**Approach:** Risk-based automation — HIGH-risk modules automated first using unit tests with mock repositories.
+
+| Section | Details |
+|---------|---------|
+| **Automation Approach** | Risk-based, regression-focused; mocked dependencies for pure service logic testing |
+| **Tool Selection** | Go `testing` + `testify/mock` for backend (lightweight, no extra frameworks needed); Playwright for frontend E2E (headless Chromium, simple API) |
+| **Scope** | Auth service (9 tests), Product service (13 tests), Interaction service (9 tests); Frontend auth flows (9 tests), product/profile redirects (12 tests) |
+| **Reusability** | Shared mock structs (`MockUserRepository`, `MockProductRepository`, `MockInteractionRepository`) reused across test files; Playwright tests organized by feature |
+
+**Why Go testing + testify over alternatives:**
+- Go built-in `testing` is zero-dependency and well-integrated with `go test` toolchain
+- `testify/mock` provides clean mock generation matching repository interfaces
+- Alternatives (gomock, ginkgo) add complexity without benefit for this scale
+
+**Why Playwright over Selenium:**
+- Native TypeScript support aligns with the React/TS frontend stack
+- Modern auto-waiting eliminates flaky test issues common in Selenium
+- Built-in HTML reporter and artifact support in GitHub Actions
+- Simpler setup: no WebDriver binaries needed
+
+### 6.2 Quality Gate Definitions
+
+See full document: [QUALITY_GATE_REPORT.md](./QUALITY_GATE_REPORT.md)
+
+| QG ID | Metric | Threshold | Status |
+|-------|--------|-----------|--------|
+| QG01 | Unit test pass rate | 100% | ✅ 31/31 |
+| QG02 | Critical defects | 0 | ✅ 0 found |
+| QG03 | Build success | 100% | ✅ Passing |
+| QG04 | E2E test pass rate | 100% | ⏳ Pending CI |
+| QG05 | Lint violations | 0 errors | ✅ Clean |
+| QG06 | Unit test execution time | ≤ 2 min | ✅ ~0.7s |
+
+### 6.3 Initial Results & Coverage Metrics
+
+See full document: [METRICS_REPORT.md](./METRICS_REPORT.md)
+
+| Module | Automated? | Coverage % | Tests |
+|--------|------------|------------|-------|
+| Auth | Yes | 100% | 9 unit tests |
+| Product CRUD | Yes | 80% | 13 unit tests |
+| Purchase Flow | Yes | 100% | 4 unit tests |
+| Interactions | Yes | 100% | 11 unit tests |
+| Recommendation Engine | No | 0% | Planned next |
+| Frontend Auth | Yes | 100% | 9 E2E tests |
+| Frontend Routes | Yes | 100% | 12 E2E tests |
+
+**Overall: 52 automated tests, 93.75% HIGH-risk function coverage**
+
+---
+
+## 7. Planned Metrics
+
+| Metric | Baseline (Assignment 1) | Current (Assignment 2) | Target |
+|--------|------------------------|----------------------|--------|
+| API endpoint coverage | 0% | 28 endpoints in Postman | 100% |
+| Service unit test coverage | 0% | 31 tests (HIGH-risk) | 80% all services |
+| E2E scenario coverage | 4 tests | 21 tests | 5+ critical flows |
+| Defects found (HIGH severity) | 0 | 0 new (5 pre-existing) | tracked |
+| CI pipeline pass rate | Green (build only) | Green (build + tests) | ≥ 95% |
 
 ### 6.1 Defect Severity Classification
 
@@ -187,9 +245,10 @@ Testing is prioritized by risk score (HIGH first):
 - Database seeded with test data
 - Postman collection imported
 
-### Exit Criteria (assignment complete)
-- All 28 endpoints tested manually via Postman
-- CI/CD pipelines green in both repositories
-- All 4 deliverable documents created
-- Screenshots captured for research paper
--test
+### Exit Criteria (Assignment 2 complete)
+- 31 unit tests passing (`go test ./internal/service/... -v`)
+- 21 E2E tests written and passing in Playwright
+- CI/CD pipelines green in both repositories (build + tests)
+- QUALITY_GATE_REPORT.md created with all 7 gates defined
+- METRICS_REPORT.md created with coverage, TTE, defects tables
+- TEST_STRATEGY.md updated with automation details

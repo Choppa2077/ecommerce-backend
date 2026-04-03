@@ -28,3 +28,17 @@ jobs:
 
       - name: Vet
         run: go vet ./...
+
+      - name: Run unit tests
+        run: go test ./internal/service/... -v -timeout 60s
+
+      - name: Upload test results
+        if: always()
+        run: go test ./internal/service/... -json -timeout 60s > test-results.json || true
+
+      - name: Upload test report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results.json
