@@ -202,7 +202,7 @@ func (r *productRepository) List(ctx context.Context, filter domain.ProductFilte
 	}
 
 	if filter.SearchQuery != "" {
-		mongoFilter["$text"] = bson.M{"$search": filter.SearchQuery}
+		mongoFilter["name"] = bson.M{"$regex": filter.SearchQuery, "$options": "i"}
 	}
 
 	// Count total
@@ -278,7 +278,7 @@ func (r *productRepository) ListWithCategories(ctx context.Context, filter domai
 	}
 
 	if filter.SearchQuery != "" {
-		matchStage["$text"] = bson.M{"$search": filter.SearchQuery}
+		matchStage["name"] = bson.M{"$regex": filter.SearchQuery, "$options": "i"}
 	}
 
 	// Build pipeline
